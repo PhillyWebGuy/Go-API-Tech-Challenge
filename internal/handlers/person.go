@@ -93,108 +93,106 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 
 // DeletePerson handles the request to delete a person by first name and last name.
 func DeletePerson(w http.ResponseWriter, r *http.Request) {
-    // Extract the name from the URL parameters
-    name := chi.URLParam(r, "name")
-    if name == "" {
-        http.Error(w, "Name parameter is missing", http.StatusBadRequest)
-        return
-    }
+	// Extract the name from the URL parameters
+	name := chi.URLParam(r, "name")
+	if name == "" {
+		http.Error(w, "Name parameter is missing", http.StatusBadRequest)
+		return
+	}
 
-    // Decode the URL-encoded full name
-    decodedFullName, err := url.QueryUnescape(name)
-    if err != nil {
-        http.Error(w, "Invalid full name format", http.StatusBadRequest)
-        return
-    }
+	// Decode the URL-encoded full name
+	decodedFullName, err := url.QueryUnescape(name)
+	if err != nil {
+		http.Error(w, "Invalid full name format", http.StatusBadRequest)
+		return
+	}
 
-    // Split the full name into first name and last name
-    names := strings.SplitN(decodedFullName, " ", 2)
-    if len(names) != 2) {
-        http.Error(w, "Invalid full name format", http.StatusBadRequest)
-        return
-    }
-    firstName := names[0]
-    lastName := names[1]
+	// Split the full name into first name and last name
+	names := strings.SplitN(decodedFullName, " ", 2)
+	if len(names) != 2 {
+		http.Error(w, "Invalid full name format", http.StatusBadRequest)
+		return
+	}
+	firstName := names[0]
+	lastName := names[1]
 
-    var person models.Person
+	var person models.Person
 
-    // Retrieve the person from the database
-    if err := database.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            http.Error(w, "Person not found", http.StatusNotFound)
-        } else {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-        }
-        return
-    }
+	// Retrieve the person from the database
+	if err := database.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.Error(w, "Person not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
 
-    // Delete the person from the database
-    if err := database.DB.Delete(&person).Error; err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
+	// Delete the person from the database
+	if err := database.DB.Delete(&person).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
-    // Debug logging
-    log.Printf("Status Code: %d", http.StatusOK)
-    log.Printf("Deleted Person: %+v", person)
+	// Debug logging
+	log.Printf("Status Code: %d", http.StatusOK)
+	log.Printf("Deleted Person: %+v", person)
 
-    json.NewEncoder(w).Encode(map[string]string{"message": "Person deleted successfully"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "Person deleted successfully"})
 }
 
 // UpdatePerson handles the request to update a person's details.
 func UpdatePerson(w http.ResponseWriter, r *http.Request) {
-    // Extract the name from the URL parameters
-    name := chi.URLParam(r, "name")
-    if name == "" {
-        http.Error(w, "Name parameter is missing", http.StatusBadRequest)
-        return
-    }
+	// Extract the name from the URL parameters
+	name := chi.URLParam(r, "name")
+	if name == "" {
+		http.Error(w, "Name parameter is missing", http.StatusBadRequest)
+		return
+	}
 
-    // Decode the URL-encoded full name
-    decodedFullName, err := url.QueryUnescape(name)
-    if err != nil {
-        http.Error(w, "Invalid full name format", http.StatusBadRequest)
-        return
-    }
+	// Decode the URL-encoded full name
+	decodedFullName, err := url.QueryUnescape(name)
+	if err != nil {
+		http.Error(w, "Invalid full name format", http.StatusBadRequest)
+		return
+	}
 
-    // Split the full name into first name and last name
-    names := strings.SplitN(decodedFullName, " ", 2)
-    if len(names) != 2) {
-        http.Error(w, "Invalid full name format", http.StatusBadRequest)
-        return
-    }
-    firstName := names[0]
-    lastName := names[1]
+	// Split the full name into first name and last name
+	names := strings.SplitN(decodedFullName, " ", 2)
+	if len(names) != 2 {
+		http.Error(w, "Invalid full name format", http.StatusBadRequest)
+		return
+	}
+	firstName := names[0]
+	lastName := names[1]
 
-    var person models.Person
+	var person models.Person
 
-    // Retrieve the person from the database
-    if err := database.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            http.Error(w, "Person not found", http.StatusNotFound)
-        } else {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-        }
-        return
-    }
+	// Retrieve the person from the database
+	if err := database.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.Error(w, "Person not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
 
-    // Decode the request body into the person struct
-    if err := json.NewDecoder(r.Body).Decode(&person); err != nil {
-        http.Error(w, "Invalid request payload", http.StatusBadRequest)
-        return
-    }
+	// Decode the request body into the person struct
+	if err := json.NewDecoder(r.Body).Decode(&person); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
 
-    // Save the updated person details to the database
-    if err := database.DB.Save(&person).Error; err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
+	// Save the updated person details to the database
+	if err := database.DB.Save(&person).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(person)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(person)
 }
-
-
