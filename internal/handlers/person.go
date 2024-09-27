@@ -118,29 +118,47 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 
 	var person models.Person
 
-	// Retrieve the person from the database
-	if err := database.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
+	// Start a new transaction
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+		return
+	}
+
+	// Retrieve the person from the database within the transaction
+	if err := tx.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			tx.Rollback()
 			http.Error(w, "Person not found", http.StatusNotFound)
 		} else {
+			tx.Rollback()
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 
-	// Delete the person from the database
-	if err := database.DB.Delete(&person).Error; err != nil {
+	// Explicitly delete related person_course records within the transaction
+	if err := tx.Where("person_id = ?", person.ID).Delete(&models.PersonCourse{}).Error; err != nil {
+		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Delete the person from the database within the transaction
+	if err := tx.Delete(&person).Error; err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	// Debug logging
-	log.Printf("Status Code: %d", http.StatusOK)
-	log.Printf("Deleted Person: %+v", person)
-
 	json.NewEncoder(w).Encode(map[string]string{"message": "Person deleted successfully"})
 }
 

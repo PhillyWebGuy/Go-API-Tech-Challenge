@@ -42,11 +42,11 @@ GET    http://localhost:8000/api/person/{name}
 
 ###
 
-PUT    http://localhost:8000/api/person/{name}
+PUT    http://localhost:8000/api/person/Steve Jobs
 content-type: application/json
 
 {
-  "first_name": "first_name",
+  "first_name": "S Jobs",
   "last_name": "last_name",
   "type": "student",
   "age": 0,
