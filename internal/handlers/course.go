@@ -25,52 +25,26 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(courses)
 }
 
-// GetCourse handles the request to get a course by ID and includes people in the course
+// GetCourse handles the request to get a course by ID
 func GetCourse(w http.ResponseWriter, r *http.Request) {
-	// Extract the ID from the URL parameters
 	id := chi.URLParam(r, "id")
 
-	// Convert the ID to an unsigned integer
-	parsedID, err := strconv.ParseUint(id, 10, 64)
+	// Convert the ID to an integer
+	intID, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, "Invalid course ID", http.StatusBadRequest)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
 
-	// Cast the parsed ID to uint
-	courseID := uint(parsedID)
-
+	// Find the course by ID
 	var course models.Course
-
-	// Retrieve the course from the database
-	result := database.DB.First(&course, "id = ?", courseID)
-	if result.Error != nil {
-		http.Error(w, http.StatusText(404), 404)
+	if err := database.DB.First(&course, "id = ?", intID).Error; err != nil {
+		http.Error(w, "Course not found", http.StatusNotFound)
 		return
-	}
-
-	var people []models.Person
-
-	// Retrieve the people associated with the course
-	result = database.DB.Table("people").Select("people.*").
-		Joins("JOIN person_course ON person_course.person_id = people.id").
-		Where("person_course.course_id = ?", courseID).Find(&people)
-	if result.Error != nil {
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	// Create a response struct to include course and people
-	response := struct {
-		Course models.Course   `json:"course"`
-		People []models.Person `json:"people"`
-	}{
-		Course: course,
-		People: people,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(course)
 }
 
 // UpdateCourse handles the request to update a specific course.
@@ -108,16 +82,39 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 func DeleteCourse(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
+	// Start a new transaction
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+		return
+	}
+
 	// Find the course by ID
 	var course models.Course
-	if err := database.DB.First(&course, "id = ?", id).Error; err != nil {
+	if err := tx.First(&course, "id = ?", id).Error; err != nil {
+		tx.Rollback()
 		http.Error(w, "Course not found", http.StatusNotFound)
 		return
 	}
 
-	// Delete the course
-	if err := database.DB.Delete(&course).Error; err != nil {
+	// Delete records in person_course that are associated with the course
+	if err := tx.Exec("DELETE FROM person_course WHERE course_id = ?", id).Error; err != nil {
+		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Delete the course
+	if err := tx.Delete(&course).Error; err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
 

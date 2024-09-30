@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -67,27 +66,62 @@ func GetPerson(w http.ResponseWriter, r *http.Request) {
 
 // CreatePerson handles the request to create a new person.
 func CreatePerson(w http.ResponseWriter, r *http.Request) {
-	var person models.Person
+	var personWithCourses models.PersonWithCourses
 
-	// Decode the request body into the person struct
-	if err := json.NewDecoder(r.Body).Decode(&person); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	// Decode the request body into the personWithCourses struct
+	if err := json.NewDecoder(r.Body).Decode(&personWithCourses); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	// Insert the person into the database
-	if err := database.DB.Create(&person).Error; err != nil {
+	// Start a new transaction
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if the person already exists in the database
+	var existingPerson models.Person
+	if err := tx.Where("first_name = ? AND last_name = ?", personWithCourses.FirstName, personWithCourses.LastName).First(&existingPerson).Error; err == nil {
+		tx.Rollback()
+		http.Error(w, "Person already exists", http.StatusConflict)
+		return
+	}
+
+	// Create a new Person struct from the personWithCourses struct
+	person := models.Person{
+		FirstName: personWithCourses.FirstName,
+		LastName:  personWithCourses.LastName,
+		Type:      personWithCourses.Type,
+		Age:       personWithCourses.Age,
+	}
+
+	// Save the person to the database
+	if err := tx.Create(&person).Error; err != nil {
+		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Insert records into the person_course table
+	for _, courseID := range personWithCourses.Courses {
+		if err := tx.Exec("INSERT INTO person_course (person_id, course_id) VALUES (?, ?)", person.ID, courseID).Error; err != nil {
+			tx.Rollback()
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
-	// Debug logging
-	log.Printf("Status Code: %d", http.StatusCreated)
-	log.Printf("Response: %+v", person)
-
 	json.NewEncoder(w).Encode(person)
 }
 
@@ -199,15 +233,54 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode the request body into the person struct
-	if err := json.NewDecoder(r.Body).Decode(&person); err != nil {
+	var personWithCourses models.PersonWithCourses
+
+	// Decode the request body into the personWithCourses struct
+	if err := json.NewDecoder(r.Body).Decode(&personWithCourses); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
+	// Start a new transaction
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+		return
+	}
+
+	// Update the person's details
+	person.FirstName = personWithCourses.FirstName
+	person.LastName = personWithCourses.LastName
+	person.Type = personWithCourses.Type
+	person.Age = personWithCourses.Age
+
 	// Save the updated person details to the database
-	if err := database.DB.Save(&person).Error; err != nil {
+	if err := tx.Save(&person).Error; err != nil {
+		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Delete existing records in the person_course table for the person
+	if err := tx.Exec("DELETE FROM person_course WHERE person_id = ?", person.ID).Error; err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Insert new records into the person_course table
+	for _, courseID := range personWithCourses.Courses {
+		if err := tx.Exec("INSERT INTO person_course (person_id, course_id) VALUES (?, ?)", person.ID, courseID).Error; err != nil {
+			tx.Rollback()
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
 

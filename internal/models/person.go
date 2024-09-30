@@ -9,6 +9,11 @@ type Person struct {
 	Age       int    `gorm:"column:age;not null" json:"age"`
 }
 
+type PersonWithCourses struct {
+	Person
+	Courses []int `gorm:"many2many:person_course" json:"courses"`
+}
+
 // TableName sets the table name for the Person struct.
 func (Person) TableName() string {
 	return "person"
