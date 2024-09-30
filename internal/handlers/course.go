@@ -3,15 +3,18 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
-// GetCourses handles the request to get all courses.
+// GetCourses handles the request to get all courses
 func GetCourses(w http.ResponseWriter, r *http.Request) {
 	var courses []models.Course
+
+	// Retrieve all courses without preloading the associated people
 	result := database.DB.Find(&courses)
 	if result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
@@ -22,17 +25,52 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(courses)
 }
 
-// GetCourse handles the request to get a specific course.
+// GetCourse handles the request to get a course by ID and includes people in the course
 func GetCourse(w http.ResponseWriter, r *http.Request) {
+	// Extract the ID from the URL parameters
 	id := chi.URLParam(r, "id")
+
+	// Convert the ID to an unsigned integer
+	parsedID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid course ID", http.StatusBadRequest)
+		return
+	}
+
+	// Cast the parsed ID to uint
+	courseID := uint(parsedID)
+
 	var course models.Course
-	result := database.DB.First(&course, "id = ?", id)
+
+	// Retrieve the course from the database
+	result := database.DB.First(&course, "id = ?", courseID)
 	if result.Error != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
 	}
+
+	var people []models.Person
+
+	// Retrieve the people associated with the course
+	result = database.DB.Table("people").Select("people.*").
+		Joins("JOIN person_course ON person_course.person_id = people.id").
+		Where("person_course.course_id = ?", courseID).Find(&people)
+	if result.Error != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	// Create a response struct to include course and people
+	response := struct {
+		Course models.Course   `json:"course"`
+		People []models.Person `json:"people"`
+	}{
+		Course: course,
+		People: people,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(course)
+	json.NewEncoder(w).Encode(response)
 }
 
 // UpdateCourse handles the request to update a specific course.

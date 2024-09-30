@@ -6,15 +6,15 @@ GET http://localhost:8000/api/course
 
 ###
 
-GET    http://localhost:8000/api/course/{id}
+GET    http://localhost:8000/api/course/1
 
 ###
 
-PUT    http://localhost:8000/api/course/{id}
+PUT    http://localhost:8000/api/course/1
 content-type: application/json
 
 {
-  "name": "test course name"
+  "name": "Go Programming"
 }
 
 ###
@@ -74,6 +74,6 @@ content-type: application/json
 
 ###
 
-DELETE http://localhost:8000/api/person/{name}
+DELETE http://localhost:8000/api/person/Steve Jobs
 
 ###
