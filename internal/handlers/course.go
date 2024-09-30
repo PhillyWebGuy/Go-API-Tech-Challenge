@@ -132,9 +132,32 @@ func CreateCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Start a new transaction
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if the course already exists in the database
+	var existingCourse models.Course
+	if err := tx.Where("name = ?", course.Name).First(&existingCourse).Error; err == nil {
+		tx.Rollback()
+		http.Error(w, "Course already exists", http.StatusConflict)
+		return
+	}
+
 	// Save the course to the database
-	if err := database.DB.Create(&course).Error; err != nil {
+	if err := tx.Create(&course).Error; err != nil {
+		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
 
