@@ -10,7 +10,14 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// GetCourses handles the request to get all courses
+// GetCourses handles the request to get all courses.
+// It retrieves all courses from the database and returns them as a JSON response.
+//
+// @param w http.ResponseWriter - the response writer to send the response
+// @param r *http.Request - the request to get all courses
+//
+// @response 200 - Courses retrieved successfully
+// @response 500 - Internal server error
 func GetCourses(w http.ResponseWriter, r *http.Request) {
 	var courses []models.Course
 
@@ -25,7 +32,16 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(courses)
 }
 
-// GetCourse handles the request to get a course by ID
+// GetCourse handles the request to get a course by ID.
+// It retrieves the course ID from the URL, converts it to an integer,
+// finds the course in the database, and returns the course as a JSON response.
+//
+// @param w http.ResponseWriter - the response writer to send the response
+// @param r *http.Request - the request containing the course ID in the URL
+//
+// @response 200 - Course retrieved successfully
+// @response 400 - Invalid course ID
+// @response 404 - Course not found
 func GetCourse(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -48,6 +64,16 @@ func GetCourse(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateCourse handles the request to update a specific course.
+// It decodes the request body into a Course struct, finds the existing course by ID,
+// updates the course fields, and saves the updated course to the database.
+//
+// @param w http.ResponseWriter - the response writer to send the response
+// @param r *http.Request - the request containing the course data and ID in the URL
+//
+// @response 200 - Course updated successfully
+// @response 400 - Invalid request payload
+// @response 404 - Course not found
+// @response 500 - Internal server error
 func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var course models.Course
@@ -79,6 +105,15 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteCourse handles the request to delete a specific course.
+// It starts a new transaction, finds the course by ID, deletes associated records
+// in the person_course table, deletes the course, and commits the transaction.
+//
+// @param w http.ResponseWriter - the response writer to send the response
+// @param r *http.Request - the request containing the course ID in the URL
+//
+// @response 200 - Course deleted successfully
+// @response 404 - Course not found
+// @response 500 - Internal server error
 func DeleteCourse(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -123,6 +158,15 @@ func DeleteCourse(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateCourse handles the request to create a new course.
+// It decodes the request body into a Course struct, saves it to the database,
+// and returns the created course in the response.
+//
+// @param w http.ResponseWriter - the response writer to send the response
+// @param r *http.Request - the request containing the course data
+//
+// @response 201 - Course created successfully
+// @response 400 - Invalid request payload
+// @response 500 - Internal server error
 func CreateCourse(w http.ResponseWriter, r *http.Request) {
 	var course models.Course
 
