@@ -13,6 +13,15 @@ import (
 	"gorm.io/gorm"
 )
 
+func validatePersonWithCourses(personWithCourses models.PersonWithCourses) error {
+	return models.Validate.Struct(personWithCourses)
+}
+
+func respondWithError(w http.ResponseWriter, code int, message string) {
+	w.WriteHeader(code)
+	w.Write([]byte(message))
+}
+
 // GetPersons handles the request to get a list of persons.
 func GetPersons(w http.ResponseWriter, r *http.Request) {
 	var persons []models.Person
@@ -71,6 +80,11 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 	// Decode the request body into the personWithCourses struct
 	if err := json.NewDecoder(r.Body).Decode(&personWithCourses); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if err := validatePersonWithCourses(personWithCourses); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
