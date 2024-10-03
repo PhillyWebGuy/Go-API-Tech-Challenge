@@ -16,7 +16,7 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	//do something with context later
+	// do something with context later
 	database.Init()
 	webserver.NewServer()
 	return nil

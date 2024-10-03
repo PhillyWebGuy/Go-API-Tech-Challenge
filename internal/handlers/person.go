@@ -7,10 +7,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
+
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
 func validatePersonWithCourses(personWithCourses models.PersonWithCourses) error {
@@ -255,6 +256,11 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validatePersonWithCourses(personWithCourses); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	// Start a new transaction
 	tx := database.DB.Begin()
 	if tx.Error != nil {
@@ -263,13 +269,13 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update the person's details
-	person.FirstName = personWithCourses.FirstName
+	/*person.FirstName = personWithCourses.FirstName
 	person.LastName = personWithCourses.LastName
 	person.Type = personWithCourses.Type
-	person.Age = personWithCourses.Age
+	person.Age = personWithCourses.Age*/
 
 	// Save the updated person details to the database
-	if err := tx.Save(&person).Error; err != nil {
+	if err := tx.Save(&personWithCourses).Error; err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

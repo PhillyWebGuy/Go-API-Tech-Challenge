@@ -8,12 +8,13 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
 func setupTestDB() *gorm.DB {
@@ -145,27 +146,23 @@ func TestUpdatePerson(t *testing.T) {
 		Age:       30,
 	}
 
-	personWithCourses := models.PersonWithCourses{
-		Person:  person,
-		Courses: []int{2, 3},
-	}
-	db.Create(&personWithCourses)
+	db.Create(&person)
 
 	// Insert associated records in person_course table
 	course := models.Course{Name: "Course 1"}
 	db.Create(&course)
 	db.Exec("INSERT INTO person_course (person_id, course_id) VALUES (?, ?)", person.ID, course.ID)
 
-	newUpdatedPerson := models.Person{
+	/*newUpdatedPerson := models.Person{
 		FirstName: "Steve",
 		LastName:  "Jones",
 		Type:      "student",
 		Age:       30,
-	}
+	}*/
 
 	updatedPersonWithCourses := models.PersonWithCourses{
-		Person:  newUpdatedPerson,
-		Courses: []int{1},
+		Person:  person,
+		Courses: []int{1, 2},
 	}
 	body, _ := json.Marshal(updatedPersonWithCourses)
 	req, _ := http.NewRequest("PUT", "/persons/"+url.QueryEscape("Steve Jones"), bytes.NewBuffer(body))

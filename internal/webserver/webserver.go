@@ -4,10 +4,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/routes"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/routes"
 )
 
 func NewServer() {

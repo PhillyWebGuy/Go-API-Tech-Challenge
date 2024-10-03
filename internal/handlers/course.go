@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
-	"github.com/go-chi/chi/v5"
 )
 
 // GetCourses handles the request to get all courses.

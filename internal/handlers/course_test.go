@@ -8,12 +8,13 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
 func setupTestCourseDB() *gorm.DB {
