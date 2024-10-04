@@ -13,7 +13,6 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
@@ -25,7 +24,7 @@ func setupTestDB() *gorm.DB {
 
 func TestGetPersons(t *testing.T) {
 	db := setupTestDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	// Insert test data
 	db.Create(&models.Person{FirstName: "John", LastName: "Doe", Type: "student", Age: 25})
@@ -33,8 +32,8 @@ func TestGetPersons(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "/persons", nil)
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(GetPersons)
-	handler.ServeHTTP(rr, req)
+	httpHandler := http.HandlerFunc(handler.GetCourses)
+	httpHandler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 
@@ -45,7 +44,7 @@ func TestGetPersons(t *testing.T) {
 
 func TestGetPerson(t *testing.T) {
 	db := setupTestDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	// Insert test data
 	person := models.Person{FirstName: "John", LastName: "Doe", Type: "student", Age: 25}
@@ -54,7 +53,7 @@ func TestGetPerson(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/persons/"+url.QueryEscape("John Doe"), nil)
 	rr := httptest.NewRecorder()
 	r := chi.NewRouter()
-	r.Get("/persons/{name}", GetPerson)
+	r.Get("/persons/{name}", handler.GetPerson)
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
@@ -67,7 +66,7 @@ func TestGetPerson(t *testing.T) {
 
 func TestCreatePerson(t *testing.T) {
 	db := setupTestDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	person := models.Person{
 		FirstName: "John",
@@ -85,8 +84,8 @@ func TestCreatePerson(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/persons", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(CreatePerson)
-	handler.ServeHTTP(rr, req)
+	httpHandler := http.HandlerFunc(handler.CreatePerson)
+	httpHandler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusCreated, rr.Code)
 
@@ -97,13 +96,13 @@ func TestCreatePerson(t *testing.T) {
 
 	// Check that the records were inserted into the person_course table
 	var personCourses []models.PersonCourse
-	database.DB.Where("person_id = ?", createdPerson.ID).Find(&personCourses)
+	db.Where("person_id = ?", createdPerson.ID).Find(&personCourses)
 	assert.Equal(t, 2, len(personCourses))
 }
 
 func TestDeletePerson(t *testing.T) {
 	db := setupTestDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	// Insert test data
 	person := models.Person{FirstName: "John", LastName: "Doe", Type: "student", Age: 25}
@@ -117,7 +116,7 @@ func TestDeletePerson(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", "/persons/"+url.QueryEscape("John Doe"), nil)
 	rr := httptest.NewRecorder()
 	r := chi.NewRouter()
-	r.Delete("/persons/{name}", DeletePerson)
+	r.Delete("/persons/{name}", handler.DeletePerson)
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
@@ -130,13 +129,13 @@ func TestDeletePerson(t *testing.T) {
 
 	// Check that the associated records in person_course table are deleted
 	var personCourses []models.PersonCourse
-	database.DB.Where("person_id = ?", person.ID).Find(&personCourses)
+	db.Where("person_id = ?", person.ID).Find(&personCourses)
 	assert.Equal(t, 0, len(personCourses))
 }
 
 func TestUpdatePerson(t *testing.T) {
 	db := setupTestDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	// Insert test data
 	person := models.Person{
@@ -153,13 +152,6 @@ func TestUpdatePerson(t *testing.T) {
 	db.Create(&course)
 	db.Exec("INSERT INTO person_course (person_id, course_id) VALUES (?, ?)", person.ID, course.ID)
 
-	/*newUpdatedPerson := models.Person{
-		FirstName: "Steve",
-		LastName:  "Jones",
-		Type:      "student",
-		Age:       30,
-	}*/
-
 	updatedPersonWithCourses := models.PersonWithCourses{
 		Person:  person,
 		Courses: []int{1, 2},
@@ -169,13 +161,13 @@ func TestUpdatePerson(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 	r := chi.NewRouter()
-	r.Put("/persons/{name}", UpdatePerson)
+	r.Put("/persons/{name}", handler.UpdatePerson)
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 
 	var updatedPerson models.Person
-	database.DB.First(&updatedPerson, person.ID)
+	db.First(&updatedPerson, person.ID)
 	assert.Equal(t, updatedPersonWithCourses.FirstName, updatedPerson.FirstName)
 	assert.Equal(t, updatedPersonWithCourses.LastName, updatedPerson.LastName)
 	assert.Equal(t, updatedPersonWithCourses.Type, updatedPerson.Type)
@@ -183,6 +175,6 @@ func TestUpdatePerson(t *testing.T) {
 
 	// Check that the records were updated in the person_course table
 	var personCourses []models.PersonCourse
-	database.DB.Where("person_id = ?", updatedPerson.ID).Find(&personCourses)
+	db.Where("person_id = ?", updatedPerson.ID).Find(&personCourses)
 	assert.Equal(t, 1, len(personCourses))
 }

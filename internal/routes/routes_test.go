@@ -7,12 +7,18 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/handlers"
 )
 
 // TestRegisterRoutes tests the RegisterRoutes function.
 func TestRegisterRoutes(t *testing.T) {
 	r := chi.NewRouter()
-	RegisterRoutes(r)
+
+	// Initialize a mock or simple instance of RequestHandler
+	requestHandler := &handlers.RequestHandler{}
+
+	RegisterRoutes(r, requestHandler)
 
 	tests := []struct {
 		method       string

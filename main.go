@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
@@ -9,15 +8,20 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-	if err := run(ctx); err != nil {
-		log.Fatal(err)
+	//ctx := context.Background()
+	if err := run( /*ctx*/ ); err != nil {
+		log.Fatalf("Application failed: %v", err)
 	}
 }
 
-func run(ctx context.Context) error {
-	// do something with context later
-	database.Init()
-	webserver.NewServer()
+func run( /*ctx context.Context*/ ) error {
+	// Initialize the database
+	db, err := database.Init()
+	if err != nil {
+		return err
+	}
+
+	// Pass the database connection to the web server
+	webserver.NewServer(db)
 	return nil
 }

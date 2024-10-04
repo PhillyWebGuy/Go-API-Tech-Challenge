@@ -13,7 +13,6 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
@@ -25,7 +24,7 @@ func setupTestCourseDB() *gorm.DB {
 
 func TestGetCourses(t *testing.T) {
 	db := setupTestCourseDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	// Insert test data
 	db.Create(&models.Course{Name: "Course 1"})
@@ -33,8 +32,8 @@ func TestGetCourses(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "/courses", nil)
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(GetCourses)
-	handler.ServeHTTP(rr, req)
+	httpHandler := http.HandlerFunc(handler.GetCourses)
+	httpHandler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 
@@ -45,7 +44,7 @@ func TestGetCourses(t *testing.T) {
 
 func TestGetCourse(t *testing.T) {
 	db := setupTestCourseDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	// Insert test data
 	course := models.Course{Name: "Course 1"}
@@ -54,7 +53,7 @@ func TestGetCourse(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/courses/"+strconv.Itoa(int(course.ID)), nil)
 	rr := httptest.NewRecorder()
 	r := chi.NewRouter()
-	r.Get("/courses/{id}", GetCourse)
+	r.Get("/courses/{id}", handler.GetCourse)
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
@@ -66,15 +65,15 @@ func TestGetCourse(t *testing.T) {
 
 func TestCreateCourse(t *testing.T) {
 	db := setupTestCourseDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	course := models.Course{Name: "Course 1"}
 	body, _ := json.Marshal(course)
 	req, _ := http.NewRequest("POST", "/courses", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(CreateCourse)
-	handler.ServeHTTP(rr, req)
+	httpHandler := http.HandlerFunc(handler.CreateCourse)
+	httpHandler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusCreated, rr.Code)
 
@@ -85,7 +84,7 @@ func TestCreateCourse(t *testing.T) {
 
 func TestUpdateCourse(t *testing.T) {
 	db := setupTestCourseDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	// Insert test data
 	course := models.Course{Name: "Course 1"}
@@ -97,7 +96,7 @@ func TestUpdateCourse(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 	r := chi.NewRouter()
-	r.Put("/courses/{id}", UpdateCourse)
+	r.Put("/courses/{id}", handler.UpdateCourse)
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
@@ -107,9 +106,9 @@ func TestUpdateCourse(t *testing.T) {
 	assert.Equal(t, updatedCourse.Name, retrievedCourse.Name)
 }
 
-/*func TestDeleteCourse(t *testing.T) {
+func TestDeleteCourse(t *testing.T) {
 	db := setupTestCourseDB()
-	database.DB = db
+	handler := NewRequestHandler(db)
 
 	// Insert test data
 	course := models.Course{Name: "Course 1"}
@@ -128,7 +127,7 @@ func TestUpdateCourse(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", "/courses/"+strconv.Itoa(int(course.ID)), nil)
 	rr := httptest.NewRecorder()
 	r := chi.NewRouter()
-	r.Delete("/courses/{id}", DeleteCourse)
+	r.Delete("/courses/{id}", handler.DeleteCourse)
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
@@ -142,4 +141,4 @@ func TestUpdateCourse(t *testing.T) {
 	// Check that the associated records in person_course table are deleted
 	db.Table("person_course").Where("course_id = ?", course.ID).Count(&personCourseCount)
 	assert.Equal(t, int64(0), personCourseCount)
-}*/
+}

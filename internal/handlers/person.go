@@ -10,7 +10,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
@@ -24,11 +23,11 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 }
 
 // GetPersons handles the request to get a list of persons.
-func GetPersons(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) GetPersons(w http.ResponseWriter, r *http.Request) {
 	var persons []models.Person
 
 	// Query the database for all persons
-	if err := database.DB.Find(&persons).Error; err != nil {
+	if err := h.DB.Find(&persons).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -38,7 +37,7 @@ func GetPersons(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetPerson handles the request to retrieve a person by ID.
-func GetPerson(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) GetPerson(w http.ResponseWriter, r *http.Request) {
 	// Extract the name from the URL parameters
 	name := chi.URLParam(r, "name")
 
@@ -61,7 +60,7 @@ func GetPerson(w http.ResponseWriter, r *http.Request) {
 	var person models.Person
 
 	// Retrieve the person from the database
-	if err := database.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
+	if err := h.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.Error(w, "Person not found", http.StatusNotFound)
 		} else {
@@ -75,7 +74,7 @@ func GetPerson(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreatePerson handles the request to create a new person.
-func CreatePerson(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) CreatePerson(w http.ResponseWriter, r *http.Request) {
 	var personWithCourses models.PersonWithCourses
 
 	// Decode the request body into the personWithCourses struct
@@ -90,7 +89,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Start a new transaction
-	tx := database.DB.Begin()
+	tx := h.DB.Begin()
 	if tx.Error != nil {
 		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
 		return
@@ -141,7 +140,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeletePerson handles the request to delete a person by first name and last name.
-func DeletePerson(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) DeletePerson(w http.ResponseWriter, r *http.Request) {
 	// Extract the name from the URL parameters
 	name := chi.URLParam(r, "name")
 	if name == "" {
@@ -168,7 +167,7 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 	var person models.Person
 
 	// Start a new transaction
-	tx := database.DB.Begin()
+	tx := h.DB.Begin()
 	if tx.Error != nil {
 		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
 		return
@@ -212,7 +211,7 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdatePerson handles the request to update a person's details.
-func UpdatePerson(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	// Extract the name from the URL parameters
 	name := chi.URLParam(r, "name")
 	if name == "" {
@@ -239,7 +238,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	var person models.Person
 
 	// Retrieve the person from the database
-	if err := database.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
+	if err := h.DB.Where("first_name = ? AND last_name = ?", firstName, lastName).First(&person).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.Error(w, "Person not found", http.StatusNotFound)
 		} else {
@@ -262,7 +261,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Start a new transaction
-	tx := database.DB.Begin()
+	tx := h.DB.Begin()
 	if tx.Error != nil {
 		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
 		return
@@ -270,9 +269,9 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 
 	// Update the person's details
 	/*person.FirstName = personWithCourses.FirstName
-	person.LastName = personWithCourses.LastName
-	person.Type = personWithCourses.Type
-	person.Age = personWithCourses.Age*/
+	  person.LastName = personWithCourses.LastName
+	  person.Type = personWithCourses.Type
+	  person.Age = personWithCourses.Age*/
 
 	// Save the updated person details to the database
 	if err := tx.Save(&personWithCourses).Error; err != nil {

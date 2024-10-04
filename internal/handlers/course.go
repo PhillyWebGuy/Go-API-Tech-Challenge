@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/database"
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
@@ -19,11 +18,12 @@ import (
 //
 // @response 200 - Courses retrieved successfully
 // @response 500 - Internal server error
-func GetCourses(w http.ResponseWriter, r *http.Request) {
+// GetCourses handles the request to get all courses.
+func (h *RequestHandler) GetCourses(w http.ResponseWriter, r *http.Request) {
 	var courses []models.Course
 
 	// Retrieve all courses without preloading the associated people
-	result := database.DB.Find(&courses)
+	result := h.DB.Find(&courses)
 	if result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 		return
@@ -34,16 +34,7 @@ func GetCourses(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetCourse handles the request to get a course by ID.
-// It retrieves the course ID from the URL, converts it to an integer,
-// finds the course in the database, and returns the course as a JSON response.
-//
-// @param w http.ResponseWriter - the response writer to send the response
-// @param r *http.Request - the request containing the course ID in the URL
-//
-// @response 200 - Course retrieved successfully
-// @response 400 - Invalid course ID
-// @response 404 - Course not found
-func GetCourse(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) GetCourse(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	// Convert the ID to an integer
@@ -55,7 +46,7 @@ func GetCourse(w http.ResponseWriter, r *http.Request) {
 
 	// Find the course by ID
 	var course models.Course
-	if err := database.DB.First(&course, "id = ?", intID).Error; err != nil {
+	if err := h.DB.First(&course, "id = ?", intID).Error; err != nil {
 		http.Error(w, "Course not found", http.StatusNotFound)
 		return
 	}
@@ -65,17 +56,7 @@ func GetCourse(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateCourse handles the request to update a specific course.
-// It decodes the request body into a Course struct, finds the existing course by ID,
-// updates the course fields, and saves the updated course to the database.
-//
-// @param w http.ResponseWriter - the response writer to send the response
-// @param r *http.Request - the request containing the course data and ID in the URL
-//
-// @response 200 - Course updated successfully
-// @response 400 - Invalid request payload
-// @response 404 - Course not found
-// @response 500 - Internal server error
-func UpdateCourse(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) UpdateCourse(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var course models.Course
 
@@ -87,7 +68,7 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 
 	// Find the course by ID
 	var existingCourse models.Course
-	if err := database.DB.First(&existingCourse, "id = ?", id).Error; err != nil {
+	if err := h.DB.First(&existingCourse, "id = ?", id).Error; err != nil {
 		http.Error(w, "Course not found", http.StatusNotFound)
 		return
 	}
@@ -96,7 +77,7 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 	existingCourse.Name = course.Name
 
 	// Save the updated course to the database
-	if err := database.DB.Save(&existingCourse).Error; err != nil {
+	if err := h.DB.Save(&existingCourse).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -106,20 +87,11 @@ func UpdateCourse(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteCourse handles the request to delete a specific course.
-// It starts a new transaction, finds the course by ID, deletes associated records
-// in the person_course table, deletes the course, and commits the transaction.
-//
-// @param w http.ResponseWriter - the response writer to send the response
-// @param r *http.Request - the request containing the course ID in the URL
-//
-// @response 200 - Course deleted successfully
-// @response 404 - Course not found
-// @response 500 - Internal server error
-func DeleteCourse(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) DeleteCourse(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	// Start a new transaction
-	tx := database.DB.Begin()
+	tx := h.DB.Begin()
 	if tx.Error != nil {
 		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
 		return
@@ -159,16 +131,7 @@ func DeleteCourse(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateCourse handles the request to create a new course.
-// It decodes the request body into a Course struct, saves it to the database,
-// and returns the created course in the response.
-//
-// @param w http.ResponseWriter - the response writer to send the response
-// @param r *http.Request - the request containing the course data
-//
-// @response 201 - Course created successfully
-// @response 400 - Invalid request payload
-// @response 500 - Internal server error
-func CreateCourse(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	var course models.Course
 
 	// Decode the request body into the course struct
@@ -178,7 +141,7 @@ func CreateCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Start a new transaction
-	tx := database.DB.Begin()
+	tx := h.DB.Begin()
 	if tx.Error != nil {
 		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
 		return
