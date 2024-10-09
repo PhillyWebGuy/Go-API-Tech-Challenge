@@ -39,7 +39,7 @@ func TestGetCourses(t *testing.T) {
 
 	var courses []models.Course
 	json.Unmarshal(rr.Body.Bytes(), &courses)
-	assert.Equal(t, 2, len(courses))
+	assert.Len(t, 2, len(courses))
 }
 
 func TestGetCourse(t *testing.T) {

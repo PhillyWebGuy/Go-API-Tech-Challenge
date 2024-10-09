@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/go-chi/chi/v5"
 
@@ -24,6 +24,6 @@ func RegisterRoutes(r *chi.Mux, requestHandler *handlers.RequestHandler) {
 
 	routes := r.Routes()
 	for _, route := range routes {
-		fmt.Printf("Registered route: %s\n", route.Pattern)
+		log.Printf("Registered route: %s\n", route.Pattern)
 	}
 }

@@ -3,11 +3,11 @@ package webserver
 import (
 	"log"
 	"net/http"
-
-	"gorm.io/gorm"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"gorm.io/gorm"
 
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/handlers"
 	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/routes"
@@ -19,10 +19,22 @@ func NewServer(db *gorm.DB) {
 	requestHandler := handlers.NewRequestHandler(db)
 	r := SetupRouter(requestHandler)
 
-	port := ":8000"
+	const port = ":8000"
 	log.Printf("Starting server on %s\n", port)
 
-	if err := http.ListenAndServe(port, r); err != nil && err != http.ErrServerClosed {
+	const readTimeout = 5 * time.Second
+	const writeTimeout = 10 * time.Second
+	const idleTimeout = 15 * time.Second
+
+	server := &http.Server{
+		Addr:         port,
+		Handler:      r,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
+		IdleTimeout:  idleTimeout,
+	}
+
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Could not listen on %s: %v\n", port, err)
 	}
 }

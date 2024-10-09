@@ -19,18 +19,23 @@ import (
 // @response 200 - Courses retrieved successfully
 // @response 500 - Internal server error
 // GetCourses handles the request to get all courses.
-func (h *RequestHandler) GetCourses(w http.ResponseWriter, r *http.Request) {
+func (h *RequestHandler) GetCourses(w http.ResponseWriter, _ *http.Request) {
 	var courses []models.Course
 
 	// Retrieve all courses without preloading the associated people
 	result := h.DB.Find(&courses)
 	if result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(courses)
+	if err := json.NewEncoder(w).Encode(courses); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
 }
 
 // GetCourse handles the request to get a course by ID.
@@ -52,7 +57,10 @@ func (h *RequestHandler) GetCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(course)
+	if err := json.NewEncoder(w).Encode(course); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateCourse handles the request to update a specific course.

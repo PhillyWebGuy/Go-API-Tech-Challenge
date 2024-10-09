@@ -6,10 +6,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
 func LoadConfig() error {

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,7 +15,10 @@ import (
 )
 
 func validatePersonWithCourses(personWithCourses models.PersonWithCourses) error {
-	return models.Validate.Struct(personWithCourses)
+	if err := models.Validate.Struct(personWithCourses); err != nil {
+		return fmt.Errorf("validation error: %w", err)
+	}
+	return nil
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
@@ -54,6 +58,7 @@ func (h *RequestHandler) GetPerson(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid full name format", http.StatusBadRequest)
 		return
 	}
+
 	firstName := names[0]
 	lastName := names[1]
 

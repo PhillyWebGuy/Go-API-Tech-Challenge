@@ -1,9 +1,10 @@
 package database
 
 import (
-	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/PhillyWebGuy/Go-API-Tech-Challenge/internal/models"
 )
 
 func NewTestDB() *gorm.DB {
