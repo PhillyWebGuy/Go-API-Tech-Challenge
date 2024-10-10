@@ -26,3 +26,5 @@ go.work.sum
 **/.env.json
 
 **/.idea
+gin-bin
+__debug_bin164454299
